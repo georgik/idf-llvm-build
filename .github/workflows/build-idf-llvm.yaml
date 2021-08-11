@@ -1,0 +1,92 @@
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-18.04
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+  build-idf-llvm:
+    name: Build IDF LLVM Project for ${{ matrix.os }}
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [macos-latest, self-hosted-macos-arm64, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-18.04, windows-latest]
+        #os: [ubuntu-18.04]
+        #os: [windows-latest]
+        # os: [macos-latest]
+        # os: [ [self-hosted, Windows, X64] ]
+        # os: [ [self-hosted, macOS, M1] ]
+        # include:
+        - os: macos-latest
+          ARCH: 'AArch64'
+          TARGET: macos-x64
+        - os: ubuntu-18.04
+          ARCH: 'X64'
+          TARGET: linux-x64
+        - os: windows-latest
+          ARCH: 'X64'
+          TARGET: win-x64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          repository: espressif/llvm-project
+          ref: xtensa_release_11.0.0
+      - name: Set up Python
+        if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Setup Ninja
+        if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest' }}
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Prepare build
+        run: |
+          mkdir build
+          cd build
+          cmake ../llvm -G "Ninja" -DLLVM_TARGETS_TO_BUILD="${{ matrix.ARCH }}" -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="Xtensa" -DLLVM_ENABLE_PROJECTS="clang" -DCMAKE_INSTALL_PREFIX=/usr/local/xtensa/llvm -DCMAKE_BUILD_TYPE=Release
+      - name: Build with LLVM
+        run: |
+          cd build
+          ninja
+      - name: Dist bundle
+        shell: bash
+        run: |
+          cd build
+          tar cJf ../llvm.tar.xz .
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          # asset_path: build/dist/rust-1.54.0-dev-x86_64-unknown-linux-gnu.tar.xz
+          # asset_name: rust-1.54.0-dev-x86_64-unknown-linux-gnu.tar.xz
+          asset_path: llvm-tar.xz
+          asset_name: llvm-11.0.0-${{ matrix.TARGET }}
+          # asset_path: build/dist/rust-1.54.0-dev-x86_64-apple-darwin.tar.xz
+          # asset_name: rust-1.54.0-dev-x86_64-apple-darwin.tar.xz
+          # asset_path: build/dist/rust-1.54.0-dev-aarch64-apple-darwin.tar.xz
+          # asset_name: rust-1.54.0-dev-aarch64-apple-darwin.tar.xz
+          asset_content_type: application/x-tar
+          #asset_content_type: application/zip
+
