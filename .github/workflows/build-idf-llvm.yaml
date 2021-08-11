@@ -34,15 +34,17 @@ jobs:
         # os: [macos-latest]
         # os: [ [self-hosted, Windows, X64] ]
         # os: [ [self-hosted, macOS, M1] ]
+        # LLVM Archs https://llvm.org/docs/GettingStarted.html#local-llvm-configuration
         include:
         - os: macos-latest
-          ARCH: 'AArch64'
+          ARCH: 'x86'
+          #ARCH: 'AArch64'
           TARGET: macos-x64
         - os: ubuntu-18.04
-          ARCH: 'X64'
+          ARCH: 'x86'
           TARGET: linux-x64
         - os: windows-latest
-          ARCH: 'X64'
+          ARCH: 'x86'
           TARGET: win-x64
     steps:
       - name: Checkout repository
