@@ -37,14 +37,14 @@ jobs:
         # LLVM Archs https://llvm.org/docs/GettingStarted.html#local-llvm-configuration
         include:
         - os: macos-latest
-          ARCH: 'x86'
+          ARCH: 'X86'
           #ARCH: 'AArch64'
           TARGET: macos-x64
         - os: ubuntu-18.04
-          ARCH: 'x86'
+          ARCH: 'X86'
           TARGET: linux-x64
         - os: windows-latest
-          ARCH: 'x86'
+          ARCH: 'X86'
           TARGET: win-x64
     steps:
       - name: Checkout repository
