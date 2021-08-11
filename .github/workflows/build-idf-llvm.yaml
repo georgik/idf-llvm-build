@@ -34,7 +34,7 @@ jobs:
         # os: [macos-latest]
         # os: [ [self-hosted, Windows, X64] ]
         # os: [ [self-hosted, macOS, M1] ]
-        # include:
+        include:
         - os: macos-latest
           ARCH: 'AArch64'
           TARGET: macos-x64
